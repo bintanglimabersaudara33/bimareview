@@ -40,9 +40,16 @@ export default function Activation() {
         
         {/* HEADER & LOGO AREA */}
         <div className="bg-slate-900 px-8 py-10 text-center relative overflow-hidden">
-          <div className="mx-auto w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mb-4 p-2 transform rotate-3">
-            <span className="text-slate-900 font-bold text-2xl tracking-tighter">BR</span>
+          
+          {/* TEMPAT LOGO ANDA */}
+          <div className="mx-auto w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center mb-4 p-2">
+            <img 
+              src="/logo.jpg" /* Ganti /logo.png dengan nama file logo Anda di folder public */
+              alt="Logo BimaReview" 
+              className="w-full h-full object-contain"
+            />
           </div>
+          
           <h1 className="text-2xl font-bold text-white tracking-wide">BimaReview</h1>
           <p className="text-slate-300 text-sm mt-2">Aktivasi Kartu Ulasan Pintar</p>
         </div>
