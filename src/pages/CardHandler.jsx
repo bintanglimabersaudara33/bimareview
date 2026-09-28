@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../firebase"; // Pastikan lokasi file firebase.js Anda benar
 
 export default function CardHandler() {
   const { cardId } = useParams();
@@ -10,20 +9,28 @@ export default function CardHandler() {
 
   useEffect(() => {
     const checkCardStatus = async () => {
+      if (!cardId) return;
+
       try {
         const docRef = doc(db, "cards", cardId);
         const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists() && docSnap.data().isActivated) {
-          // JIKA SUDAH AKTIF, LANGSUNG BUKA LINK GOOGLE REVIEW
-          window.location.href = docSnap.data().googleReviewUrl;
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // Cek apakah statusnya aktif DAN link review-nya ada
+          if (data.isActivated && data.googleReviewUrl) {
+            // Langsung arahkan (redirect) ke Google Review
+            window.location.href = data.googleReviewUrl;
+          } else {
+            // Ada di database tapi belum aktif
+            navigate(`/activate/${cardId}`);
+          }
         } else {
-          // JIKA KOSONG / BELUM AKTIF, MASUK KE FORM AKTIVASI
+          // Belum ada di database sama sekali
           navigate(`/activate/${cardId}`);
         }
       } catch (error) {
-        console.error("Gagal mengecek database:", error);
-        navigate(`/activate/${cardId}`);
+        console.error("Error mengecek database:", error);
       }
     };
 
@@ -31,9 +38,11 @@ export default function CardHandler() {
   }, [cardId, navigate]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50">
-      <Loader2 className="h-10 w-10 animate-spin text-accent" />
-      <p className="mt-4 text-sm font-medium text-slate-500 animate-pulse">Menghubungkan ke Ulasan...</p>
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-accent"></div>
+      <p className="mt-4 text-sm font-medium text-slate-600 animate-pulse">
+        Memproses BimaReview...
+      </p>
     </div>
   );
 }
