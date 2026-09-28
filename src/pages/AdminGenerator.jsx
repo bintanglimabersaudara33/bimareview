@@ -1,10 +1,19 @@
 import { useState } from "react";
-import { QrCode, Download, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Download, RefreshCw, ShieldCheck, Sparkles, QrCode as QrIcon, LogOut } from "lucide-react";
 import html2canvas from "html2canvas";
+import QRCode from "react-qr-code";
 
 export default function AdminGenerator() {
   const [generatedCards, setGeneratedCards] = useState([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const navigate = useNavigate();
+
+  // Fungsi Logout
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    navigate("/login");
+  };
 
   const generateUniqueId = () => {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
@@ -24,7 +33,6 @@ export default function AdminGenerator() {
     setGeneratedCards([newCard, ...generatedCards]);
   };
 
-  // FUNGSI UNTUK MENGUNDUH DESAIN MENJADI FILE PNG
   const handleDownloadAcrylicDesign = async (cardId) => {
     setIsDownloading(true);
     const element = document.getElementById(`print-area-${cardId}`);
@@ -32,9 +40,9 @@ export default function AdminGenerator() {
     if (element) {
       try {
         const canvas = await html2canvas(element, {
-          scale: 3, // Skala 3x lipat agar resolusi gambar sangat jernih (HD) saat dicetak
-          useCORS: true, // Wajib agar gambar QR Code dari luar bisa ikut ter-render
-          backgroundColor: "#0f172a", // Warna background dasar (Slate 900)
+          scale: 3, 
+          useCORS: true, 
+          backgroundColor: "#0f172a", 
         });
         
         const image = canvas.toDataURL("image/png");
@@ -44,7 +52,7 @@ export default function AdminGenerator() {
         downloadLink.click();
       } catch (error) {
         console.error("Gagal mendownload desain:", error);
-        alert("Gagal mengunduh gambar. Pastikan koneksi internet stabil.");
+        alert("Gagal mengunduh gambar. Silakan coba lagi.");
       }
     }
     setIsDownloading(false);
@@ -54,6 +62,7 @@ export default function AdminGenerator() {
     <div className="min-h-screen bg-slate-100 py-10 px-4">
       <div className="max-w-4xl mx-auto">
         
+        {/* Header Admin dengan Tombol Logout */}
         <div className="bg-primary rounded-3xl p-8 text-white shadow-xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -63,15 +72,28 @@ export default function AdminGenerator() {
             <h1 className="text-2xl font-bold">BimaReview Acrylic & NFC Generator</h1>
             <p className="text-slate-300 text-sm mt-1">Generate ID unik lengkap dengan unduhan gambar siap cetak.</p>
           </div>
-          <button onClick={handleGenerateNewCard} className="flex items-center gap-2 bg-accent hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg transition-all">
-            <RefreshCw className="w-5 h-5" /> Buat Desain Akrilik Baru
-          </button>
+          
+          <div className="flex gap-3 w-full md:w-auto">
+            <button 
+              onClick={handleGenerateNewCard} 
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-accent hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg transition-all"
+            >
+              <RefreshCw className="w-5 h-5" /> Buat Baru
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="flex items-center justify-center p-3 bg-slate-800 hover:bg-red-600 text-white rounded-2xl shadow-lg transition-all"
+              title="Keluar (Logout)"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="space-y-6">
           {generatedCards.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm">
-              <QrCode className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <QrIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-700">Belum ada desain akrilik</h3>
               <p className="text-slate-400 text-sm mt-1 mb-6">Klik tombol di atas untuk membuat template pertama Anda.</p>
             </div>
@@ -92,12 +114,12 @@ export default function AdminGenerator() {
                   <h4 className="font-bold text-lg tracking-tight text-white z-10">BimaReview</h4>
                   <p className="text-[11px] text-slate-400 mb-6 z-10">Scan / Tap untuk Ulasan</p>
 
-                  <div className="bg-white p-3 rounded-2xl shadow-inner mb-6 z-10">
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(card.link)}`} 
-                      alt="QR"
-                      crossOrigin="anonymous" // Wajib ada agar gambar eksternal bisa diunduh
-                      className="w-32 h-32"
+                  {/* QR CODE LOKAL (ANTI ERROR CORS) */}
+                  <div className="bg-white p-3 rounded-2xl shadow-inner mb-6 z-10 flex items-center justify-center">
+                    <QRCode 
+                      value={card.link} 
+                      size={120} 
+                      level="H" 
                     />
                   </div>
 
