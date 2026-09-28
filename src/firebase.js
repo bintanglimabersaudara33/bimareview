@@ -1,9 +1,8 @@
-// Import the functions you need from the SDKs you need
+// Import fungsi yang dibutuhkan dari SDK Firebase
 import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getFirestore } from "firebase/firestore"; // <-- Ini yang kurang sebelumnya
 
-// Your web app's Firebase configuration
+// Konfigurasi web app Firebase Anda
 const firebaseConfig = {
   apiKey: "AIzaSyCdU8BQLMRDtXBakvhUbuYxOfiyGLaBhX4",
   authDomain: "bimareview.firebaseapp.com",
@@ -15,3 +14,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Inisialisasi Firestore dan EKSPOR variabel "db" agar bisa dibaca oleh halaman lain
+export const db = getFirestore(app);
