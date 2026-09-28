@@ -1,95 +1,137 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "../firebase"; // Pastikan lokasi file firebase.js Anda benar
-import { ArrowRight, Store, Link as LinkIcon } from "lucide-react";
+import { db } from "../firebase"; // Pastikan path ini benar
+import { CheckCircle2, Store, Link as LinkIcon, ArrowRight, Loader2 } from "lucide-react";
 
 export default function Activation() {
-  const { cardId } = useParams(); // Mengambil ID langsung dari URL
-  const [businessName, setBusinessName] = useState("");
-  const [reviewLink, setReviewLink] = useState("");
+  const { cardId } = useParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleActivate = async (e) => {
+  const [formData, setFormData] = useState({
+    businessName: "",
+    googleLink: "",
+  });
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Mencegah error jika cardId kosong dari URL
-    const finalCardId = cardId || "ID-TIDAK-VALID";
+    const finalCardId = cardId || "BIMA-DEFAULT";
 
     try {
-      // Menyimpan ke Firebase menggunakan nama field yang benar
+      // PROSES SIMPAN KE FIREBASE YANG ASLI
       await setDoc(doc(db, "cards", finalCardId), {
-        businessName: businessName,
-        googleReviewUrl: reviewLink, 
+        businessName: formData.businessName,
+        googleReviewUrl: formData.googleLink,
         isActivated: true,
         activatedAt: new Date().toLocaleString("id-ID")
       }, { merge: true });
 
-      alert("Kartu berhasil diaktifkan!");
-      
-      // Langsung tes lempar ke link ulasan setelah berhasil save
-      window.location.href = reviewLink;
-      
+      // Jika berhasil simpan, munculkan halaman sukses
+      setIsSuccess(true);
     } catch (error) {
-      console.error("Gagal menyimpan:", error);
-      alert("Gagal mengaktifkan kartu. Coba lagi.");
+      console.error("Gagal menyimpan data:", error);
+      alert("Koneksi gagal. Pastikan pengaturan Firebase Rules sudah diubah menjadi true.");
+    } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Fungsi saat tombol "Coba Tap Kartu" diklik
+  const handleTryCard = () => {
+    // Arahkan ke link handler untuk mengetes apakah otomatis redirect ke Google
+    window.location.href = `/card/${cardId}`;
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">BimaReview</h2>
-        <p className="mt-2 text-center text-sm text-slate-600">Aktivasi Kartu Cerdas Anda (ID: {cardId})</p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+        
+        {/* Header */}
+        <div className="bg-slate-900 px-8 py-10 text-center relative overflow-hidden">
+          <div className="mx-auto w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mb-4 p-2">
+             {/* Jika punya logo, ganti dengan tag img di bawah ini */}
+             <span className="text-slate-900 font-bold text-2xl tracking-tighter">BR</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white tracking-wide">BimaReview</h1>
+          <p className="text-slate-300 text-sm mt-2">Aktivasi Kartu Ulasan Pintar</p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-slate-100">
-          <form className="space-y-6" onSubmit={handleActivate}>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Nama Bisnis / Toko</label>
-              <div className="mt-2 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Store className="h-5 w-5 text-slate-400" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl focus:ring-accent focus:border-accent sm:text-sm bg-slate-50"
-                  placeholder="Contoh: Kedai Kopi Bima"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                />
-              </div>
+        <div className="p-8">
+          {isSuccess ? (
+            // Tampilan Berhasil
+            <div className="text-center py-6 animate-fade-in">
+              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Aktivasi Berhasil!</h2>
+              <p className="text-slate-500 text-sm mb-8">
+                ID Kartu <span className="font-semibold text-slate-900">{cardId}</span> kini sudah aktif dan terhubung ke ulasan bisnis Anda.
+              </p>
+              <button 
+                onClick={handleTryCard}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                Coba Tap Kartu Sekarang <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Link Google Review</label>
-              <div className="mt-2 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <LinkIcon className="h-5 w-5 text-slate-400" />
+          ) : (
+            // Tampilan Form
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700 ml-1">Nama Bisnis / Toko</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Store className="h-5 w-5 text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Kedai Kopi Bima"
+                    className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50 focus:bg-white outline-none"
+                    value={formData.businessName}
+                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                  />
                 </div>
-                <input
-                  type="url"
-                  required
-                  className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl focus:ring-accent focus:border-accent sm:text-sm bg-slate-50"
-                  placeholder="https://g.page/r/..."
-                  value={reviewLink}
-                  onChange={(e) => setReviewLink(e.target.value)}
-                />
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-all"
-            >
-              {isSubmitting ? "Menyimpan Data..." : "Aktifkan Kartu Sekarang"} <ArrowRight className="ml-2 h-4 w-4" />
-            </button>
-          </form>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700 ml-1">Link Google Review</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <LinkIcon className="h-5 w-5 text-slate-400" />
+                  </div>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://g.page/r/..."
+                    className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50 focus:bg-white outline-none"
+                    value={formData.googleLink}
+                    onChange={(e) => setFormData({ ...formData, googleLink: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      Aktifkan Kartu <ArrowRight className="h-5 w-5 ml-2" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>
